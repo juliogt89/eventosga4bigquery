@@ -2,13 +2,14 @@ import os
 import pyodbc
 from google.cloud import bigquery
 
-# Establecer la variable de entorno GOOGLE_APPLICATION_CREDENTIALS
+# Establecer la variable de entorno GOOGLE_APPLICATION_CREDENTIALS #Set the environment variable
+
 os.environ['GOOGLE_APPLICATION_CREDENTIALS'] = 'rutadetuscredencialesjson.json'
 
-# Crea un cliente de BigQuery
+# Crea un cliente de BigQuery #Create a BigQuery client
 client = bigquery.Client()
 
-# Configura la conexión a SQL Server
+# Configura la conexión a SQL Server #Configure the connection to SQL Server
 server = 'tuservidor3'
 database = 'tubasededatos'
 username = 'tuusuario'
@@ -20,22 +21,23 @@ cursor = conn.cursor()
 def ejecutar_consulta_por_dia(fecha):
     sql_query = f"""(tu query de bigquery) """ 
     # en el nombre de la tabla colocar la variable _{fecha} (al final del nombre de tu tabla de bigquery particionada tablaga4.ga4.events_{fecha})donde el parametro fecha es de acuerdo a las fechas de tus tablas particionadas
+#in the name of the table place the variable _{date} (at the end of the name of your partitioned bigquery table tablaga4.ga4.events_{date}) where the date parameter is according to the dates of your partitioned tables
     try:
-        # Ejecuta la consulta
+        # Ejecuta la consulta # Execute the query
         query_job = client.query(sql_query)
 
-        # Lista para almacenar los resultados como diccionarios
+        # Lista para almacenar los resultados como diccionarios # List to store the results as dictionaries
         results = []
 
-        # Recorre los resultados de la consulta
+        # Recorre los resultados de la consulta # Scroll through the query results
         for row in query_job:
-            # Convierte cada fila en un diccionario serializable
+            # Convierte cada fila en un diccionario serializable # Convert each row to a serializable dictionary
             result_dict = dict(row)
             results.append(result_dict)
 
         return results
     except Exception as e:
-        print(f'Error al ejecutar la consulta: {str(e)}')
+        print(f'Error al ejecutar la consulta: {str(e)}') #Error executing query
         return []
 
 def guardar_resultados_por_dia(resultados_por_dia):
@@ -43,29 +45,30 @@ def guardar_resultados_por_dia(resultados_por_dia):
         if resultados:
             columnas = resultados[0].keys()
 
-            # Modifica esta parte para insertar en la base de datos SQL Server
+            # Modifica esta parte para insertar en la base de datos SQL Server # Modify this part to insert into the SQL Server database
             for resultado in resultados:
                 
                 
-                # Crear una tabla en la base de datos si aún no existe
-                create_table_query = f"IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'nombredelatablaacrearensqlserver') "
+                # Crear una tabla en la base de datos si aún no existe # Create a table in the database if it does not already exist
+                  #nombredelatablaacrearensqlserver #tablenamecreateinsqlserver
+                create_table_query = f"IF NOT EXISTS (SELECT * FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_NAME = 'nombredelatablaacrearensqlserver') " 
                 create_table_query += "CREATE TABLE nombredelatablaacrearensqlserver ("
                 create_table_query += ', '.join([f'{col} NVARCHAR(MAX)' for col in columnas])
                 create_table_query += ");"
                 cursor.execute(create_table_query)
 
-                # Insertar los datos en la tabla
+                # Insertar los datos en la tabla # Insert the data into the table
                 insert_query = f"INSERT INTO nombredelatablaacrearensqlserver ({', '.join(columnas)}) VALUES ("
                 insert_query += ', '.join(['?' for _ in columnas])
                 insert_query += ");"
                 cursor.execute(insert_query, tuple(str(value) for value in resultado.values()))
 
-            conn.commit()  # Guardar los cambios en la base de datos
+            conn.commit()  # Guardar los cambios en la base de datos # Save changes to the database
 
-            print(f'Los datos del {fecha} se han insertado en la base de datos SQL Server')
+            print(f'Los datos del {fecha} se han insertado en la base de datos SQL Server') #Data on {date} has been inserted into the SQL Server database
 
-# Definir rango de fechas a procesar
-fechas_a_procesar = ['20231002','20231003','20231004''20231005']  # Agrega las fechas que necesites
+# Definir rango de fechas a procesar # Define date range to process
+fechas_a_procesar = ['20231002','20231003','20231004''20231005']  # Agrega las fechas que necesites # Add the dates you need
 
 resultados_por_dia = {}
 
@@ -75,5 +78,5 @@ for fecha in fechas_a_procesar:
 
 guardar_resultados_por_dia(resultados_por_dia)
 
-# Cierra la conexión a la base de datos al final del script
+# Cierra la conexión a la base de datos al final del script # Close the connection to the database at the end of the script
 conn.close()
